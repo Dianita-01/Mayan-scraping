@@ -1,43 +1,25 @@
-from bs4 import BeautifulSoup # this module helps in web scrapping.
-import requests  # this module helps us to download a web page
-import pandas as pd
+from bs4 import BeautifulSoup
+from utils.scraping_helpers import get_html_parser, get_date, get_content, get_title, create_csv
 
-data = []
+def main (): 
+    months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+    url = "https://www.lajornadamaya.mx/k'iintsil/";
+    year = "-2023";
+    data = [];
+    for month in months:
+        url_aux = url + month + year
+        soup: BeautifulSoup = get_html_parser(url_aux)
+        blogs_url= soup.select(".post-headline")
 
-url = "https://www.lajornadamaya.mx/k'iintsil/archivo"
-data  = requests.get(url).text
+        for blog_url in blogs_url: 
+            blog_url_href = blog_url.get('href')
+            print(blog_url_href)
+            blog = get_html_parser(blog_url_href)
+            title = get_title(blog);
+            date = get_date(blog);
+            content = get_content(blog);
+            data.append([title, date, content]);
 
-soup = BeautifulSoup(data,"html5lib")  # create a soup object using the variable 'data'
-target_a = soup.select('a[href*="2023"]')
-
-for link in target_a:
-    print("----------------------------------------------------------------")
-    print(link.get('href'))
-    new_url = link.get('href')
-    new_data  = requests.get(new_url).text
-    soup = BeautifulSoup(new_data,"html5lib")
-    targets_year = soup.find_all("a", class_="post-headline")
+    create_csv(data, file_name='data-blog-2023.csv')
     
-    for tag in targets_year:
-        new_url = link.get('href')
-        new_data  = requests.get(new_url).text
-        soup = BeautifulSoup(new_data,"html5lib")
-
-        print('******')
-        print(tag.get('href'))
-        title = soup.find("a", class_="post-headline").get_text()
-        print(title)
-
-        date_p = soup.select(".post-meta p:nth-child(2)")
-        print(date_p[0].get_text())
-
-        string = ""  
-        content = soup.select(".single-blog-content > p")
-        print(content)  # Imprimir título y fech
-        for item in content:
-            print("item:", item.get_text())  
-            string += item.get_text() + "\n"  
-
-        print(string)
-
-df = pd.DataFrame(data, columns=['title', 'date', 'content'])
+main()
